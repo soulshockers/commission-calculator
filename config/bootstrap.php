@@ -1,20 +1,12 @@
 <?php
 
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
-use Symfony\Component\Dotenv\Dotenv;
+declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-$dotenv = new Dotenv();
-$dotenv->loadEnv(__DIR__ . '/../.env');
+use App\Kernel;
 
-$containerBuilder = new ContainerBuilder();
+$kernel = new Kernel();
+$kernel->boot();
 
-$loader = new YamlFileLoader($containerBuilder, new FileLocator(__DIR__));
-$loader->load('services.yaml');
-
-$containerBuilder->compile(resolveEnvPlaceholders: true);
-
-return $containerBuilder;
+return $kernel->getContainer();
