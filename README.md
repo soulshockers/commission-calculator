@@ -99,6 +99,10 @@ Tests cover:
 * Error Handling: Errors are handled gracefully, with meaningful messages for issues such as invalid JSON or failed external service requests.
 * Precision: Commission values are rounded to the nearest cent.
 
+## License
+
+This project is licensed under the MIT License.
+
 ## Time spend
 
 Around 5 hours
