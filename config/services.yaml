@@ -1,0 +1,78 @@
+parameters:
+  app.eu_country_codes: '%env(csv:EU_COUNTRY_CODES)%'
+  app.exchange_rates.url: '%env(EXCHANGE_RATES_URL)%'
+  app.exchange_rates.api_key: '%env(EXCHANGE_RATES_API_KEY)%'
+  app.bin_lookup.url: '%env(BIN_LOOKUP_URL)%'
+
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  _instanceof:
+    App\Service\CommissionCalculator\CommissionCalculationStrategy\CommissionCalculationStrategyInterface:
+      tags: [ 'app.commission_calculator.commission_calculation_strategy' ]
+
+  # Automatically load services from the src/ directory except for DTO
+  App\:
+    resource: '../src/*'
+    exclude: '../src/{DTO}'
+
+  # Explicitly configure a command service
+  App\Command\CalculateCommissionCommand:
+    public: true
+    arguments:
+      $fileProcessor: '@App\Service\FileProcessor'
+
+  App\Service\CommissionCalculator\CommissionCalculatorService:
+    calls:
+      - [ setCommissionCalculationStrategies, [ !tagged_iterator app.commission_calculator.commission_calculation_strategy ] ]
+
+  Symfony\Component\Serializer\SerializerInterface: '@serializer'
+  Symfony\Component\Validator\Validator\ValidatorInterface: '@validator'
+  Symfony\Contracts\HttpClient\HttpClientInterface: '@http_client'
+  Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface: '@parameter_bag'
+
+  parameter_bag:
+    class: Symfony\Component\DependencyInjection\ParameterBag\ContainerBag
+    arguments:
+      - '@service_container'
+
+  # The default serializer service
+  serializer:
+    class: Symfony\Component\Serializer\Serializer
+    arguments:
+      - ['@serializer.normalizer.object', '@serializer.normalizer.array']
+      - ['@serializer.encoder.json']
+
+  # Normalizers and encoders for the serializer
+  serializer.normalizer.object:
+    class: Symfony\Component\Serializer\Normalizer\ObjectNormalizer
+    arguments:
+      $classMetadataFactory: ~
+      $nameConverter: ~
+      $propertyAccessor: ~
+      $propertyTypeExtractor: ~
+      $defaultContext: []
+
+  serializer.normalizer.array:
+    class: Symfony\Component\Serializer\Normalizer\ArrayDenormalizer
+
+  serializer.encoder.json:
+    class: Symfony\Component\Serializer\Encoder\JsonEncoder
+
+  # Validator services
+  validator.builder:
+    class: Symfony\Component\Validator\ValidatorBuilder
+    factory: ['Symfony\Component\Validator\Validation', 'createValidatorBuilder']
+    calls:
+      - method: enableAttributeMapping
+
+  validator:
+    class: Symfony\Component\Validator\Validator\ValidatorInterface
+    factory: ['@validator.builder', 'getValidator']
+
+  # HttpClient service
+  http_client:
+    class: Symfony\Component\HttpClient\HttpClient
+    factory: [ 'Symfony\Component\HttpClient\HttpClient', 'create' ]

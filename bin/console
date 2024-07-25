@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Symfony\Component\Console\Application;
+
+
+$container = require __DIR__ . '/../config/bootstrap.php';
+
+$application = new Application('CommissionCalculator', '1.0.0');
+
+$application->addCommands([
+    $container->get(App\Command\CalculateCommissionCommand::class),
+]);
+$application->setDefaultCommand('app:calculate-commission', true);
+
+$application->run();
